@@ -882,10 +882,7 @@
       if (q.length < 2)   { return; }
       const hits = [];
       for (let i = 0; i < searchIndex.length; i++) {
-        if (searchIndex[i].includes(q)) {
-          hits.push(i);
-          if (hits.length >= 200) break;
-        }
+        if (searchIndex[i].includes(q)) hits.push(i);
       }
       if (hits.length === 0) showNotFound(raw.trim());
       else                   showResults(hits, raw.trim());
