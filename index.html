@@ -192,7 +192,6 @@
       color: var(--text); letter-spacing: -.015em;
     }
     .topbar-sep  { color: var(--border); margin: 0 .2rem; }
-    .topbar-sub  { font-size: .78rem; color: var(--text-muted); }
     .lang-switcher { margin-left: auto; display: flex; gap: 2px; }
     .lang-btn {
       background: none; border: 1px solid transparent;
@@ -528,7 +527,6 @@
 
     /* ---- Responsive ---- */
     @media (max-width: 520px) {
-      .topbar-sub, .topbar-sep { display: none; }
       .hero { padding: 2rem 1.125rem 0; }
       .results { padding: 1.25rem 1.125rem 3rem; }
       .stats-bar { padding: 0 1.125rem; }
@@ -546,9 +544,7 @@
         <path d="M9 12l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="3"/>
       </svg>
     </div>
-    <span class="topbar-title">Integratori IT</span>
-    <span class="topbar-sep">/</span>
-    <span class="topbar-sub">Registro degli Integratori Alimentari</span>
+    <span class="topbar-title" id="topbarTitle"></span>
     <nav class="lang-switcher" aria-label="Language">
       <button class="lang-btn" data-lang="de">DE</button>
       <button class="lang-btn" data-lang="it">IT</button>
@@ -559,8 +555,7 @@
   <main>
     <div class="hero">
       <span class="hero-eyebrow">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
-        <span id="eyebrowText"></span><span id="updateDate"></span>
+        <span id="eyebrowLabel"></span>
       </span>
       <h1 id="heroTitle"></h1>
       <p class="hero-desc" id="heroDesc"></p>
@@ -605,7 +600,8 @@
     const T = {
       de: {
         htmlLang:      'de',
-        eyebrow:       'Stand: ',
+        topbarTitle:   'SupplementCheck',
+        eyebrowLabel:  'Liste der angemeldeten Nahrungsergänzungsmittel',
         h1:            'Ist dieses Nahrungsergänzungsmittel in Italien zugelassen?',
         desc:          'Suche nach Produktname, Hersteller oder Notifizierungsnummer im offiziellen Registro degli Integratori Alimentari des Ministerio della Salute.',
         placeholder:   'z.B. Omega 3, Rottapharm, 36474 ...',
@@ -617,7 +613,7 @@
         foundSub:      (q) => `fuer \u201e${q}\u201c`,
         foundSubMore:  () => ` \u2014 erste ${MAX_RESULTS} werden angezeigt`,
         nfTitle:       'Nicht im Register gefunden',
-        nfDesc:        (q) => `\u201e${q}\u201c \u2014 kein Eintrag im Register. Das Produkt ist moeglicherweise nicht notifiziert oder unter anderem Namen registriert.`,
+        nfDesc:        (q) => `\u201e${q}\u201c \u2014 kein Eintrag im Register. Das Produkt ist moeglicherweise nicht notifiziert, unter anderem Namen registriert oder der Notifizierungsprozess laeuft noch.`,
         moreResults:   (n) => `Suche verfeinern fuer praezisere Ergebnisse (${fmt(n)} Treffer gesamt).`,
         labelMfr:      'Hersteller',
         labelCode:     'Notifizierungsnr.',
@@ -645,7 +641,8 @@
       },
       it: {
         htmlLang:      'it',
-        eyebrow:       'Aggiornato al ',
+        topbarTitle:   'IntegratoriCheck',
+        eyebrowLabel:  'elenco integratori notificati',
         h1:            'L\'integratore alimentare è autorizzato in Italia?',
         desc:          'Cerca per nome del prodotto, produttore o numero di notifica nel Registro degli Integratori Alimentari del Ministerio della Salute.',
         placeholder:   'es. Omega 3, Rottapharm, 36474 ...',
@@ -657,7 +654,7 @@
         foundSub:      (q) => `per \u201c${q}\u201d`,
         foundSubMore:  () => ` \u2014 primi ${MAX_RESULTS} visualizzati`,
         nfTitle:       'Non trovato nel registro',
-        nfDesc:        (q) => `\u201c${q}\u201d \u2014 nessuna voce nel registro. Il prodotto potrebbe non essere notificato o registrato con un nome diverso.`,
+        nfDesc:        (q) => `\u201c${q}\u201d \u2014 nessuna voce nel registro. Il prodotto potrebbe non essere notificato, essere registrato con un nome diverso o avere la notifica ancora in corso.`,
         moreResults:   (n) => `Affina la ricerca per risultati pi\u00f9 precisi (${fmt(n)} risultati totali).`,
         labelMfr:      'Produttore',
         labelCode:     'Nr. di notifica',
@@ -685,7 +682,8 @@
       },
       en: {
         htmlLang:      'en',
-        eyebrow:       'Updated ',
+        topbarTitle:   'SupplementCheck',
+        eyebrowLabel:  'Registered Food Supplements',
         h1:            'Is this food supplement authorized for sale in Italy?',
         desc:          'Search by product name, manufacturer, or notification number in the official Registro degli Integratori Alimentari of the Ministerio della Salute. Products absent from this register cannot lawfully be sold in Italy.',
         placeholder:   'e.g. Omega 3, Rottapharm, 36474 ...',
@@ -728,7 +726,7 @@
     /* ==================================================
        STATE
     ================================================== */
-    const APP_VERSION  = 'v5.5';
+    const APP_VERSION  = 'v5.6';
     const APP_RELEASE  = '2026-06-12';
     const MAX_RESULTS  = 25;
     let companies   = [];
@@ -773,8 +771,9 @@
 
     function renderUI() {
       const t = T[lang];
-      document.getElementById('eyebrowText').textContent = t.eyebrow;
-      document.getElementById('heroTitle').textContent   = t.h1;
+      document.getElementById('topbarTitle').textContent  = t.topbarTitle;
+      document.getElementById('eyebrowLabel').textContent = t.eyebrowLabel;
+      document.getElementById('heroTitle').textContent    = t.h1;
       document.getElementById('heroDesc').textContent    = t.desc;
       searchInput.placeholder = t.placeholder;
       statsBar.textContent = ready
@@ -851,7 +850,6 @@
         dbCount     = data.length;
         dbCompanies = companies.length;
         dbUpdated   = (json.updated || '').replace(/\//g, '.');
-        document.getElementById('updateDate').textContent = dbUpdated;
 
         searchIndex = data.map(e =>
           (e[1] + ' ' + companies[e[0]] + ' ' + e[2]).toLowerCase()
