@@ -1,2 +1,2 @@
 # integratori
-Search tool for Italy's official food supplement register - identify products not authorized for sale in the Italian market (Ministerio della Salute)
+In Italy, food supplements must be formally notified to the Ministerio della Salute before they can legally be placed on the market. The Registro degli Integratori Alimentari is the official list of all notified products. Any supplement not appearing in this register has not completed the mandatory notification process and therefore cannot lawfully be sold in Italy. This tool allows instant lookup of the full register — covering 111,000+ products — to quickly verify whether a specific supplement, brand, or manufacturer holds a valid Italian market notification.
