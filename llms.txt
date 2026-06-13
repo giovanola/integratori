@@ -1,6 +1,6 @@
-# Italian Supplement Register
+# Italian Food Supplement Register
 
-> Search tool for Italy's official food supplement register (Registro degli Integratori Alimentari), published by the Ministerio della Salute, Repubblica Italiana. Allows instant verification of whether a supplement is legally authorized for sale in Italy.
+> Search tool for Italy's official food food supplement register (Registro degli Integratori Alimentari), published by the Ministerio della Salute, Repubblica Italiana. Allows instant verification of whether a supplement is legally authorized for sale in Italy.
 
 ## Purpose
 

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Italian Supplement Register | Registro degli Integratori Alimentari</title>
-  <meta name="description" content="Instantly check if a supplement is legally authorized for sale in Italy. Search 111,000+ products in the official Registro degli Integratori Alimentari (Ministerio della Salute)." />
+  <title>Italian Food Supplement Register | Registro degli Integratori Alimentari</title>
+  <meta name="description" content="Instantly check if a food supplement is legally authorized for sale in Italy. Search 111,000+ products in the official Registro degli Integratori Alimentari (Ministerio della Salute)." />
   <meta name="robots" content="index, follow" />
   <meta name="keywords" content="Italian supplement register, integratori alimentari Italia, Registro degli Integratori Alimentari, Ministerio della Salute, food supplement Italy authorized, supplement notification Italy, integratori notificati, Nahrungsergaenzungsmittel Italien zugelassen" />
   <meta name="author" content="Giovanola" />
@@ -18,20 +18,20 @@
 
   <!-- OpenGraph -->
   <meta property="og:type"        content="website" />
-  <meta property="og:site_name"   content="Italian Supplement Register" />
+  <meta property="og:site_name"   content="Italian Food Supplement Register" />
   <meta property="og:url"         content="https://giovanola.github.io/integratori/" />
-  <meta property="og:title"       content="Italian Supplement Register | Registro degli Integratori Alimentari" />
-  <meta property="og:description" content="Instantly check if a supplement is legally authorized for sale in Italy. Search 111,000+ products in the official Registro degli Integratori Alimentari (Ministerio della Salute)." />
+  <meta property="og:title"       content="Italian Food Supplement Register | Registro degli Integratori Alimentari" />
+  <meta property="og:description" content="Instantly check if a food supplement is legally authorized for sale in Italy. Search 111,000+ products in the official Registro degli Integratori Alimentari (Ministerio della Salute)." />
   <meta property="og:image"       content="https://giovanola.github.io/integratori/italian-Supplement-Register_by_Giovanola.jpeg" />
-  <meta property="og:image:alt"   content="Italian Supplement Register — Registro degli Integratori Alimentari" />
+  <meta property="og:image:alt"   content="Italian Food Supplement Register — Registro degli Integratori Alimentari" />
   <meta property="og:locale"      content="en_US" />
   <meta property="og:locale:alternate" content="it_IT" />
   <meta property="og:locale:alternate" content="de_DE" />
 
   <!-- Twitter / X Card -->
   <meta name="twitter:card"        content="summary_large_image" />
-  <meta name="twitter:title"       content="Italian Supplement Register | Registro degli Integratori Alimentari" />
-  <meta name="twitter:description" content="Instantly check if a supplement is legally authorized for sale in Italy. Search 111,000+ products." />
+  <meta name="twitter:title"       content="Italian Food Supplement Register | Registro degli Integratori Alimentari" />
+  <meta name="twitter:description" content="Instantly check if a food supplement is legally authorized for sale in Italy. Search 111,000+ products." />
   <meta name="twitter:image"       content="https://giovanola.github.io/integratori/italian-Supplement-Register_by_Giovanola.jpeg" />
 
   <!-- Schema.org JSON-LD -->
@@ -42,12 +42,12 @@
       {
         "@type": "WebApplication",
         "@id": "https://giovanola.github.io/integratori/#app",
-        "name": "Italian Supplement Register",
+        "name": "Italian Food Supplement Register",
         "alternateName": [
           "Registro degli Integratori Alimentari",
-          "Italienisches Supplement-Register"
+          "Deutsches Nahrungsergänzungsmittel-Register"
         ],
-        "description": "Search tool for Italy's official food supplement register. Instantly verify whether a supplement has been formally notified to the Ministerio della Salute and is authorized for sale in Italy.",
+        "description": "Search tool for Italy's official food supplement register. Instantly verify whether a food supplement has been formally notified to the Ministerio della Salute and is authorized for sale in Italy.",
         "url": "https://giovanola.github.io/integratori/",
         "applicationCategory": "HealthApplication",
         "operatingSystem": "Web",
@@ -78,7 +78,7 @@
         "@type": "Dataset",
         "@id": "https://giovanola.github.io/integratori/#dataset",
         "name": "Registro degli Integratori Alimentari — Integratori Notificati",
-        "description": "Complete list of food supplements formally notified to the Italian Ministerio della Salute. Includes product name, manufacturer, and notification number for 111,181 registered products from 6,108 manufacturers.",
+        "description": "Complete list of food supplements (integratori alimentari) formally notified to the Italian Ministerio della Salute. Includes product name, manufacturer, and notification number for 111,181 registered products from 6,108 manufacturers.",
         "url": "https://giovanola.github.io/integratori/",
         "license": "https://www.salute.gov.it/",
         "isAccessibleForFree": true,
@@ -86,9 +86,9 @@
         "dateModified": "2026-06-01",
         "keywords": [
           "integratori alimentari",
-          "food supplements Italy",
+          "food supplements Italy integratori alimentari",
           "Ministerio della Salute",
-          "supplement register Italy",
+          "food supplement register Italy integratori notificati",
           "integratori notificati"
         ],
         "creator": {
@@ -112,7 +112,7 @@
         "@type": "WebPage",
         "@id": "https://giovanola.github.io/integratori/#page",
         "url": "https://giovanola.github.io/integratori/",
-        "name": "Italian Supplement Register | Registro degli Integratori Alimentari",
+        "name": "Italian Food Supplement Register | Registro degli Integratori Alimentari",
         "isPartOf": { "@id": "https://giovanola.github.io/integratori/#app" },
         "about": { "@id": "https://giovanola.github.io/integratori/#dataset" },
         "inLanguage": ["en", "it", "de"],
@@ -378,6 +378,59 @@
     }
     .results-note { text-align: center; font-size: .775rem; color: var(--text-dim); margin-top: 1rem; }
 
+    /* Consumer guidance (collapsible, shown on not-found) */
+    .consumer-wrap {
+      margin-top: .75rem;
+      border: 1px solid var(--border-sub);
+      border-radius: var(--radius);
+      background: var(--bg-card);
+      overflow: hidden;
+    }
+    .consumer-toggle {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: .75rem 1rem;
+      background: none; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: .8rem; font-weight: 600;
+      color: var(--text-muted);
+      text-align: left;
+      transition: color .15s, background .15s;
+      gap: .5rem;
+    }
+    .consumer-toggle:hover { color: var(--text); background: var(--bg); }
+    .consumer-toggle .chevron {
+      flex-shrink: 0; color: var(--text-dim);
+      transition: transform .2s;
+    }
+    .consumer-wrap.open .chevron { transform: rotate(180deg); }
+    .consumer-body {
+      display: none;
+      padding: 0 1rem 1rem;
+      border-top: 1px solid var(--border-sub);
+    }
+    .consumer-wrap.open .consumer-body { display: block; }
+    .consumer-body p {
+      font-size: .8rem; color: var(--text-muted);
+      line-height: 1.65; margin: .75rem 0 .625rem;
+    }
+    .consumer-body ul {
+      list-style: none; padding: 0; margin: 0;
+      display: flex; flex-direction: column; gap: .4rem;
+    }
+    .consumer-body li {
+      display: flex; gap: .6rem; align-items: flex-start;
+      font-size: .8rem; color: var(--text-muted); line-height: 1.55;
+    }
+    .consumer-body li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--accent);
+      margin-top: .5rem;
+    }
+    .consumer-body a { color: var(--accent); text-decoration: none; }
+    .consumer-body a:hover { text-decoration: underline; }
+
     /* ---- Footer ---- */
     footer {
       border-top: 1px solid var(--border-sub);
@@ -537,7 +590,7 @@
       de: {
         htmlLang:      'de',
         eyebrow:       'Stand: ',
-        h1:            'Ist das Supplement in Italien zugelassen?',
+        h1:            'Ist dieses Nahrungsergänzungsmittel in Italien zugelassen?',
         desc:          'Suche nach Produktname, Hersteller oder Notifizierungsnummer im offiziellen Registro degli Integratori Alimentari des Ministerio della Salute.',
         placeholder:   'z.B. Omega 3, Rottapharm, 36474 ...',
         loading:       "111\u2019181 Eintraege werden geladen \u2026",
@@ -560,14 +613,23 @@
         footerRelease: 'Release',
         footerDiscl:   'Dieses Tool dient ausschliesslich zu Informationszwecken und ersetzt keine Rechtsberatung. Die Daten werden ohne Gewaehr auf Vollstaendigkeit oder Aktualitaet bereitgestellt.',
         seoTitle:      'Supplement-Register Italien | Registro degli Integratori Alimentari',
-        seoDesc:       'Prüfen Sie sofort, ob ein Supplement in Italien zugelassen ist. Suche in über 111.000 Produkten im offiziellen Registro degli Integratori Alimentari des Ministerio della Salute.',
+        seoDesc:       'Prüfen Sie sofort, ob ein Nahrungsergänzungsmittel in Italien zugelassen ist. Suche in über 111.000 Produkten im offiziellen Registro degli Integratori Alimentari des Ministerio della Salute.',
+        consumerToggle: 'Was können Verbraucher tun?',
+        consumerIntro:  'Wenn Sie vermuten, dass ein Nahrungsergänzungsmittel in Italien ohne die erforderliche Notifizierung vermarktet wird oder potenziell irreführende Gesundheitsaussagen macht, können Sie:',
+        consumerSteps: [
+          'Prüfen, ob das Produkt im offiziellen Register des Ministerio della Salute erscheint (Sie befinden sich bereits hier).',
+          'Den Hersteller oder Distributor kontaktieren und den Ministeriums-Notifizierungscode anfordern.',
+          'Eine Meldung beim <a href="https://www.salute.gov.it/" target="_blank" rel="noopener">Ministerio della Salute</a> einreichen.',
+          'Eine Verbraucherschutzbeschwerde bei der Wettbewerbsbehörde AGCM einreichen: <a href="https://www.agcm.it/segnala-online/" target="_blank" rel="noopener">AGCM – Segnala online</a>.',
+          'Das Produkt bei lokalen Gesundheitsbehörden oder anderen zuständigen Vollzugsstellen melden.',
+        ],
         infoTitle:     'Datenquelle & Urheberrecht',
         infoBody:      `<p><strong>Herkunft der Daten</strong><br>Die in diesem Tool angezeigten Daten stammen aus dem offiziellen Registro degli Integratori Alimentari des Ministerio della Salute, Republik Italien. Die Daten wurden aus dem dort veröffentlichten PDF-Register entnommen und zu Informationszwecken aufbereitet.</p><p><strong>Eigentümer</strong><br>Ministerio della Salute, Repubblica Italiana. Alle Rechte am Datenbestand liegen beim Ministerio della Salute.</p><p><strong>Haftungsausschluss</strong><br>Dieses Tool übernimmt keine Gewähr für die Vollständigkeit, Richtigkeit oder Aktualität der dargestellten Daten. Es können Abweichungen gegenüber dem offiziellen Register bestehen. Massgeblich ist ausschliesslich das offizielle Register.</p><p><strong>Offizielle Quelle</strong><br><a href="${SOURCE_URL}" target="_blank" rel="noopener">${SOURCE_URL}</a></p>`,
       },
       it: {
         htmlLang:      'it',
         eyebrow:       'Aggiornato al ',
-        h1:            'Il supplemento \u00e8 autorizzato in Italia?',
+        h1:            'L\'integratore alimentare è autorizzato in Italia?',
         desc:          'Cerca per nome del prodotto, produttore o numero di notifica nel Registro degli Integratori Alimentari del Ministerio della Salute.',
         placeholder:   'es. Omega 3, Rottapharm, 36474 ...',
         loading:       "Caricamento di 111\u2019181 prodotti \u2026",
@@ -591,13 +653,22 @@
         footerDiscl:   'Questo strumento ha esclusivamente scopo informativo e non costituisce consulenza legale. I dati sono forniti senza garanzia di completezza o aggiornamento.',
         seoTitle:      'Registro degli Integratori Alimentari | Ministerio della Salute',
         seoDesc:       'Verifica subito se un integratore è autorizzato alla vendita in Italia. Cerca tra oltre 111.000 prodotti nel Registro degli Integratori Alimentari del Ministerio della Salute.',
+        consumerToggle: 'Cosa può fare il consumatore?',
+        consumerIntro:  'Se ritieni che un integratore venga commercializzato in Italia senza la notifica obbligatoria, o se identifichi affermazioni sulla salute potenzialmente fuorvianti, puoi:',
+        consumerSteps: [
+          'Verificare se il prodotto è presente nel registro ufficiale del Ministerio della Salute (sei già qui).',
+          'Contattare il produttore o il distributore e richiedere il codice di notifica ministeriale.',
+          'Inviare una segnalazione al <a href="https://www.salute.gov.it/" target="_blank" rel="noopener">Ministerio della Salute</a>.',
+          'Presentare un reclamo per la tutela dei consumatori all\'Autorità Garante della Concorrenza e del Mercato: <a href="https://www.agcm.it/segnala-online/" target="_blank" rel="noopener">AGCM – Segnala online</a>.',
+          'Segnalare il prodotto alle autorità sanitarie locali o ad altri organismi di controllo competenti.',
+        ],
         infoTitle:     'Fonte dei dati & Copyright',
         infoBody:      `<p><strong>Origine dei dati</strong><br>I dati visualizzati in questo strumento provengono dal Registro degli Integratori Alimentari ufficiale del Ministerio della Salute, Repubblica Italiana, estratti dal registro PDF pubblicato sul sito ufficiale.</p><p><strong>Titolare</strong><br>Ministerio della Salute, Repubblica Italiana. Tutti i diritti sui dati appartengono al Ministerio della Salute.</p><p><strong>Limitazione di responsabilità</strong><br>Questo strumento non garantisce la completezza, l'accuratezza o l'aggiornamento dei dati. Possono esistere discrepanze rispetto al registro ufficiale. Fare riferimento esclusivamente al registro ufficiale.</p><p><strong>Fonte ufficiale</strong><br><a href="${SOURCE_URL}" target="_blank" rel="noopener">${SOURCE_URL}</a></p>`,
       },
       en: {
         htmlLang:      'en',
         eyebrow:       'Updated ',
-        h1:            'Is this supplement authorized for sale in Italy?',
+        h1:            'Is this food supplement authorized for sale in Italy?',
         desc:          'Search by product name, manufacturer, or notification number in the official Registro degli Integratori Alimentari of the Ministerio della Salute. Products absent from this register cannot lawfully be sold in Italy.',
         placeholder:   'e.g. Omega 3, Rottapharm, 36474 ...',
         loading:       "Loading 111,181 products \u2026",
@@ -619,8 +690,17 @@
         csvFilename:   'integratori',
         footerRelease: 'Released',
         footerDiscl:   'This tool is provided for informational purposes only and does not constitute legal advice. Data is provided without guarantee of completeness or accuracy.',
-        seoTitle:      'Italian Supplement Register | Registro degli Integratori Alimentari',
-        seoDesc:       'Instantly check if a supplement is legally authorized for sale in Italy. Search 111,000+ products in the official Registro degli Integratori Alimentari (Ministerio della Salute).',
+        seoTitle:      'Italian Food Supplement Register | Registro degli Integratori Alimentari',
+        seoDesc:       'Instantly check if a food supplement is legally authorized for sale in Italy. Search 111,000+ products in the official Registro degli Integratori Alimentari (Ministerio della Salute).',
+        consumerToggle: 'What Can Consumers Do?',
+        consumerIntro:  'If you believe a food supplement is being marketed to Italian consumers without the required notification, or if you identify potentially misleading health claims, you can:',
+        consumerSteps: [
+          'Verify whether the product appears in the official Ministry register (you are already here).',
+          'Contact the manufacturer or distributor and request the Ministry notification code.',
+          'Submit a report to the <a href="https://www.salute.gov.it/" target="_blank" rel="noopener">Italian Ministry of Health</a>.',
+          'File a consumer protection complaint with the Italian Competition Authority: <a href="https://www.agcm.it/segnala-online/" target="_blank" rel="noopener">AGCM – Segnala online</a>.',
+          'Report the product to local health authorities or other competent enforcement bodies.',
+        ],
         infoTitle:     'Data Source & Attribution',
         infoBody:      `<p><strong>Data origin</strong><br>The data displayed in this tool is sourced from the official Registro degli Integratori Alimentari published by the Ministerio della Salute, Repubblica Italiana, and extracted from the official PDF register available on the ministry's website.</p><p><strong>Data owner</strong><br>Ministerio della Salute, Repubblica Italiana. All rights to the dataset remain with the Ministerio della Salute.</p><p><strong>Disclaimer</strong><br>No guarantee is provided for the completeness, accuracy, or timeliness of the information presented. Discrepancies may exist between this tool and the official PDF register. Always verify against the official source.</p><p><strong>Official source</strong><br><a href="${SOURCE_URL}" target="_blank" rel="noopener">${SOURCE_URL}</a></p>`,
       }
@@ -629,7 +709,7 @@
     /* ==================================================
        STATE
     ================================================== */
-    const APP_VERSION  = 'v5.1';
+    const APP_VERSION  = 'v5.3';
     const APP_RELEASE  = '2026-06-12';
     const MAX_RESULTS  = 25;
     let companies   = [];
@@ -810,6 +890,9 @@
 
     function showNotFound(query) {
       const t = T[lang];
+      const steps = t.consumerSteps
+        .map(s => `<li>${s}</li>`)
+        .join('');
       resultsEl.innerHTML = `
         <div class="status-banner notfound">
           <div class="banner-icon">
@@ -818,6 +901,18 @@
           <div class="banner-text">
             <strong>${escHtml(t.nfTitle)}</strong>
             <small>${escHtml(t.nfDesc(query))}</small>
+          </div>
+        </div>
+        <div class="consumer-wrap" id="consumerWrap">
+          <button class="consumer-toggle" onclick="document.getElementById('consumerWrap').classList.toggle('open')">
+            <span>${escHtml(t.consumerToggle)}</span>
+            <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="consumer-body">
+            <p>${escHtml(t.consumerIntro)}</p>
+            <ul>${steps}</ul>
           </div>
         </div>`;
     }
