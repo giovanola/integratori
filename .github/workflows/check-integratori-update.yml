@@ -89,24 +89,50 @@ jobs:
             echo "Keine neue Version gefunden. Naechste Pruefung: naechsten Montag."
           fi
 
-      # 5. PDF herunterladen
+      # 5. PDF herunterladen (mit Browser-Headers und Cookie-Session)
       - name: Download new PDF
         if: steps.check.outputs.found == 'true'
         run: |
           set -e
           URL="${{ steps.check.outputs.pdf_url }}"
-          echo "Lade herunter: $URL"
-          curl -L --max-time 180 --retry 3 --retry-delay 10 \
-            --fail --show-error \
+          REFERER="https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/"
+          COOKIES="/tmp/salute_cookies.txt"
+
+          echo "Hole Session-Cookies vom Ministeriums-Portal..."
+          curl -s -c "$COOKIES" -o /dev/null \
+            --max-time 30 \
+            -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            "$REFERER" || true
+
+          echo "Lade PDF herunter: $URL"
+          curl -L \
+            --max-time 300 \
+            --retry 3 \
+            --retry-delay 10 \
+            --fail \
+            --show-error \
+            -b "$COOKIES" \
+            -c "$COOKIES" \
+            -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+            -H "Referer: $REFERER" \
+            -H "Accept: application/pdf,*/*;q=0.9" \
             "$URL" -o /tmp/integratori_new.pdf
+
           SIZE=$(du -sh /tmp/integratori_new.pdf | cut -f1)
-          echo "Download abgeschlossen: $SIZE"
-          # Minimale Groesse pruefen (PDF sollte > 1 MB sein)
           BYTES=$(stat -c%s /tmp/integratori_new.pdf)
-          if [ "$BYTES" -lt 1000000 ]; then
-            echo "FEHLER: Heruntergeladene Datei zu klein ($BYTES Bytes) - kein gueltiges PDF"
+          echo "Download: $SIZE ($BYTES Bytes)"
+
+          # Pruefen ob echtes PDF (Magic Bytes %PDF am Anfang)
+          MAGIC=$(head -c 4 /tmp/integratori_new.pdf | cat -v)
+          echo "Magic Bytes: $MAGIC"
+          if ! head -c 4 /tmp/integratori_new.pdf | grep -q "%PDF"; then
+            echo "FEHLER: Heruntergeladene Datei ist kein gueltiges PDF."
+            echo "Erste 500 Zeichen der Antwort:"
+            head -c 500 /tmp/integratori_new.pdf
             exit 1
           fi
+
+          echo "PDF validiert. Groesse: $SIZE"
 
       # 6. PDF → JSON konvertieren
       - name: Convert PDF to JSON
