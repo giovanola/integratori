@@ -391,6 +391,8 @@
     }
     .notfound-btn:hover { color: var(--text-muted); border-color: var(--text-dim); background: var(--bg); }
     .notfound-btn.hidden { display: none; }
+    .consumer-wrap { display: none; }       /* unsichtbar bis notfound-btn geklickt */
+    .consumer-wrap.visible { display: block; }
 
     /* Consumer guidance (collapsible) */
     .consumer-wrap {
@@ -726,7 +728,7 @@
     /* ==================================================
        STATE
     ================================================== */
-    const APP_VERSION  = 'v5.4';
+    const APP_VERSION  = 'v5.5';
     const APP_RELEASE  = '2026-06-12';
     const MAX_RESULTS  = 25;
     let companies   = [];
@@ -917,6 +919,17 @@
             <small>${escHtml(t.nfDesc(query))}</small>
           </div>
         </div>
+        <button class="notfound-btn" onclick="
+          var w = document.getElementById('consumerWrapNF');
+          w.classList.add('visible', 'open');
+          this.classList.add('hidden');
+          w.scrollIntoView({behavior:'smooth', block:'nearest'});
+        ">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+          ${escHtml(t.notFoundBtn)}
+        </button>
         ${consumerBlock('consumerWrapNF')}`;
     }
 
@@ -994,7 +1007,7 @@
       html += `
         <button class="notfound-btn" onclick="
           var w = document.getElementById('consumerWrapResults');
-          w.classList.toggle('open');
+          w.classList.add('visible', 'open');
           this.classList.add('hidden');
           w.scrollIntoView({behavior:'smooth', block:'nearest'});
         ">
