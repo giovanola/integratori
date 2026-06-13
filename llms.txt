@@ -1,0 +1,45 @@
+# Italian Supplement Register
+
+> Search tool for Italy's official food supplement register (Registro degli Integratori Alimentari), published by the Ministerio della Salute, Repubblica Italiana. Allows instant verification of whether a supplement is legally authorized for sale in Italy.
+
+## Purpose
+
+In Italy, food supplements must be formally notified to the Ministerio della Salute before they can legally be placed on the market. Any product absent from the Registro degli Integratori Alimentari has not completed this mandatory process and cannot lawfully be sold in Italy.
+
+This tool provides a free, multilingual search interface over the complete official register, enabling consumers, importers, pharmacists, and regulatory professionals to verify product authorization status instantly.
+
+## Data
+
+- **Source:** Registro degli Integratori Alimentari, Ministerio della Salute, Repubblica Italiana
+- **Data owner:** Ministerio della Salute — all rights to the dataset remain with the ministry
+- **Records:** 111,181 notified food supplements
+- **Manufacturers:** 6,108 registered companies (Imprese)
+- **Fields per record:** Product name (Prodotto), Manufacturer (Impresa), Notification number (Codice)
+- **Last updated:** 01.06.2026
+- **Official source URL:** https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/
+
+## Features
+
+- Full-text search across product name, manufacturer, and notification number
+- Available in English, Italian, and German (language switcher, hash-based: #lang=en / #lang=it / #lang=de)
+- Instant client-side search with no server round-trip
+- CSV export of all search results (UTF-8 BOM, semicolon-delimited, Excel-compatible)
+- Mobile-first responsive design
+
+## Disclaimer
+
+This tool is provided for informational purposes only and does not constitute legal advice. No guarantee is provided for the completeness, accuracy, or timeliness of the information presented. Discrepancies may exist between this tool and the official PDF register published by the Ministerio della Salute. Always verify against the official source.
+
+## Technical
+
+- Static site hosted on GitHub Pages: https://giovanola.github.io/integratori/
+- Data format: JSON (extracted and structured from official PDF register)
+- Search: client-side substring matching over pre-computed lowercase index
+- No server-side processing, no tracking, no cookies, no analytics
+- Multilingual UI: English (default), Italian, German
+
+## Files
+
+- [index.html](https://giovanola.github.io/integratori/): Main search interface
+- [data/integratori.json](https://giovanola.github.io/integratori/data/integratori.json): Structured supplement database (4.2 MB uncompressed, ~1.3 MB gzip)
+- [llms.txt](https://giovanola.github.io/integratori/llms.txt): This file
