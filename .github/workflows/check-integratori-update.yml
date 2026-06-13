@@ -117,7 +117,9 @@ jobs:
                   # Schritt 2: PDF herunterladen
                   print(f"Starte PDF-Download: {PDF_URL}")
                   async with page.expect_download(timeout=300000) as dl_info:
-                      await page.goto(PDF_URL, timeout=60000)
+                      # "commit" feuert sobald der Server antwortet —
+                      # kein "load"-Event bei PDFs abwarten
+                      await page.goto(PDF_URL, wait_until="commit", timeout=60000)
                   dl = await dl_info.value
                   await dl.save_as(OUT_PATH)
                   print(f"PDF gespeichert: {OUT_PATH}")
