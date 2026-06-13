@@ -114,14 +114,25 @@ jobs:
                   await page.wait_for_timeout(3000)
                   print("Portal geladen. Bot-Check bestanden.")
 
-                  # Schritt 2: PDF herunterladen
-                  print(f"Starte PDF-Download: {PDF_URL}")
-                  async with page.expect_download(timeout=300000) as dl_info:
-                      # "commit" feuert sobald der Server antwortet —
-                      # kein "load"-Event bei PDFs abwarten
-                      await page.goto(PDF_URL, wait_until="commit", timeout=60000)
-                  dl = await dl_info.value
-                  await dl.save_as(OUT_PATH)
+                  # Schritt 2: PDF via Browser-Kontext laden
+                  # context.request teilt die Cookies der Portal-Sitzung
+                  # und umgeht so den Bot-Check ohne Download-Event zu brauchen
+                  print(f"Lade PDF via Browser-Kontext: {PDF_URL}")
+                  response = await context.request.get(
+                      PDF_URL,
+                      headers={
+                          "Referer":  PORTAL,
+                          "Accept":   "application/pdf,*/*;q=0.9",
+                      },
+                      timeout=300000,
+                  )
+                  if not response.ok:
+                      print(f"FEHLER: HTTP {response.status} {response.status_text}")
+                      sys.exit(1)
+
+                  body = await response.body()
+                  with open(OUT_PATH, "wb") as f:
+                      f.write(body)
                   print(f"PDF gespeichert: {OUT_PATH}")
 
                   await browser.close()
