@@ -378,7 +378,21 @@
     }
     .results-note { text-align: center; font-size: .775rem; color: var(--text-dim); margin-top: 1rem; }
 
-    /* Consumer guidance (collapsible, shown on not-found) */
+    /* "Nicht gefunden was du gesucht hast?" Button (unterhalb Ergebnisliste) */
+    .notfound-btn {
+      display: flex; align-items: center; gap: .45rem;
+      margin: 1.25rem auto 0;
+      background: none; border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'Inter', sans-serif;
+      font-size: .78rem; font-weight: 500;
+      padding: .5rem .9rem; border-radius: 20px;
+      cursor: pointer; transition: color .15s, border-color .15s, background .15s;
+    }
+    .notfound-btn:hover { color: var(--text-muted); border-color: var(--text-dim); background: var(--bg); }
+    .notfound-btn.hidden { display: none; }
+
+    /* Consumer guidance (collapsible) */
     .consumer-wrap {
       margin-top: .75rem;
       border: 1px solid var(--border-sub);
@@ -615,6 +629,7 @@
         seoTitle:      'Supplement-Register Italien | Registro degli Integratori Alimentari',
         seoDesc:       'Prüfen Sie sofort, ob ein Nahrungsergänzungsmittel in Italien zugelassen ist. Suche in über 111.000 Produkten im offiziellen Registro degli Integratori Alimentari des Ministerio della Salute.',
         consumerToggle: 'Was können Verbraucher tun?',
+        notFoundBtn:    'Kein passendes Produkt gefunden?',
         consumerIntro:  'Wenn Sie vermuten, dass ein Nahrungsergänzungsmittel in Italien ohne die erforderliche Notifizierung vermarktet wird oder potenziell irreführende Gesundheitsaussagen macht, können Sie:',
         consumerSteps: [
           'Prüfen, ob das Produkt im offiziellen Register des Ministerio della Salute erscheint (Sie befinden sich bereits hier).',
@@ -654,6 +669,7 @@
         seoTitle:      'Registro degli Integratori Alimentari | Ministerio della Salute',
         seoDesc:       'Verifica subito se un integratore è autorizzato alla vendita in Italia. Cerca tra oltre 111.000 prodotti nel Registro degli Integratori Alimentari del Ministerio della Salute.',
         consumerToggle: 'Cosa può fare il consumatore?',
+        notFoundBtn:    'Non hai trovato il prodotto che stavi cercando?',
         consumerIntro:  'Se ritieni che un integratore venga commercializzato in Italia senza la notifica obbligatoria, o se identifichi affermazioni sulla salute potenzialmente fuorvianti, puoi:',
         consumerSteps: [
           'Verificare se il prodotto è presente nel registro ufficiale del Ministerio della Salute (sei già qui).',
@@ -693,6 +709,7 @@
         seoTitle:      'Italian Food Supplement Register | Registro degli Integratori Alimentari',
         seoDesc:       'Instantly check if a food supplement is legally authorized for sale in Italy. Search 111,000+ products in the official Registro degli Integratori Alimentari (Ministerio della Salute).',
         consumerToggle: 'What Can Consumers Do?',
+        notFoundBtn:    'Couldn\'t find the product you\'re looking for?',
         consumerIntro:  'If you believe a food supplement is being marketed to Italian consumers without the required notification, or if you identify potentially misleading health claims, you can:',
         consumerSteps: [
           'Verify whether the product appears in the official Ministry register (you are already here).',
@@ -709,7 +726,7 @@
     /* ==================================================
        STATE
     ================================================== */
-    const APP_VERSION  = 'v5.3';
+    const APP_VERSION  = 'v5.4';
     const APP_RELEASE  = '2026-06-12';
     const MAX_RESULTS  = 25;
     let companies   = [];
@@ -890,9 +907,6 @@
 
     function showNotFound(query) {
       const t = T[lang];
-      const steps = t.consumerSteps
-        .map(s => `<li>${s}</li>`)
-        .join('');
       resultsEl.innerHTML = `
         <div class="status-banner notfound">
           <div class="banner-icon">
@@ -903,8 +917,16 @@
             <small>${escHtml(t.nfDesc(query))}</small>
           </div>
         </div>
-        <div class="consumer-wrap" id="consumerWrap">
-          <button class="consumer-toggle" onclick="document.getElementById('consumerWrap').classList.toggle('open')">
+        ${consumerBlock('consumerWrapNF')}`;
+    }
+
+    /* Consumer guidance block — wiederverwendbar fuer not-found UND results */
+    function consumerBlock(id) {
+      const t     = T[lang];
+      const steps = t.consumerSteps.map(s => `<li>${s}</li>`).join('');
+      return `
+        <div class="consumer-wrap" id="${id}">
+          <button class="consumer-toggle" onclick="document.getElementById('${id}').classList.toggle('open')">
             <span>${escHtml(t.consumerToggle)}</span>
             <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="6 9 12 15 18 9"/>
@@ -967,6 +989,21 @@
       if (total > MAX_RESULTS) {
         html += `<p class="results-note">${escHtml(t.moreResults(total))}</p>`;
       }
+
+      // "Nicht gefunden was du gesucht hast?" Button + Consumer-Block
+      html += `
+        <button class="notfound-btn" onclick="
+          var w = document.getElementById('consumerWrapResults');
+          w.classList.toggle('open');
+          this.classList.add('hidden');
+          w.scrollIntoView({behavior:'smooth', block:'nearest'});
+        ">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+          </svg>
+          ${escHtml(t.notFoundBtn)}
+        </button>`;
+      html += consumerBlock('consumerWrapResults');
 
       resultsEl.innerHTML = html;
     }
