@@ -14,5 +14,16 @@ If a food supplement is marketed in Italy without having undergone the required 
 
 Because the National Register is the official public record of notified supplements, the absence of a product from the register may indicate that no notification record exists. However, users should be aware that the register is updated periodically and that the legal status of any specific product can ultimately only be determined by the competent authorities.
 
+## What Can Consumers Do?
+
+If you believe a food supplement is being marketed to Italian consumers without the required notification, or if you identify potentially misleading health claims, you can:
+
+* Verify whether the product appears in the official Ministry register.
+* Contact the manufacturer or distributor and request the Ministry notification code.
+* Submit a report to the Italian Ministry of Health.
+* File a consumer protection complaint with the Italian Competition Authority (AGCM).
+* Report the product to local health authorities or other competent enforcement bodies.
+
 ## Official Sources
-- Italian Ministry of Health, National Register of Food Supplements: https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/
+* Italian Ministry of Health, National Register of Food Supplements: [https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/]
+* AGCM - Segnala online [https://www.agcm.it/segnala-online/]
