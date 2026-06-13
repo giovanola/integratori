@@ -5,7 +5,6 @@ on:
     - cron: '0 7 * * 1'
   workflow_dispatch:
 
-# Node.js 24 erzwingen (behebt Deprecation-Warnung)
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -19,23 +18,26 @@ jobs:
 
     steps:
 
-      # 1. Checkout mit explizitem Token fuer Push-Berechtigung
+      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      # 2. Python + pdfplumber
+      # 2. Python + Bibliotheken (pdfplumber + Playwright)
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install pdfplumber
-        run: pip install pdfplumber --quiet
+      - name: Install Python dependencies
+        run: |
+          pip install pdfplumber playwright --quiet
+          playwright install chromium --with-deps
+          echo "Playwright und Chromium installiert."
 
-      # 3. Aktuelle Version lesen (Leerzeichen/Newlines entfernen)
+      # 3. Aktuelle Version lesen
       - name: Read current known version
         id: current
         run: |
@@ -44,15 +46,13 @@ jobs:
           else
             VERSION="11"
           fi
-          # Sicherstellen dass es eine Zahl ist
           if ! [[ "$VERSION" =~ ^[0-9]+$ ]]; then
-            echo "WARNUNG: Ungueltige Version '$VERSION', setze auf 11"
             VERSION="11"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Aktuelle bekannte Version: $VERSION"
 
-      # 4. Neue Version pruefen
+      # 4. Neue Version pruefen (HEAD-Request genuegt fuer Existenzpruefung)
       - name: Check for new PDF version
         id: check
         run: |
@@ -63,107 +63,107 @@ jobs:
           URL_AZ="${BASE}/INTEGRATORI_NOTIFICATI_ORD_AZ_${NEXT}.pdf"
           URL_PROD="${BASE}/INTEGRATORI_NOTIFICATI_ORD_PROD_${NEXT}.pdf"
 
-          echo "Pruefe AZ   v${NEXT}: $URL_AZ"
-          STATUS_AZ=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_AZ" || echo "000")
-
-          echo "Pruefe PROD v${NEXT}: $URL_PROD"
+          STATUS_AZ=$(curl   -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_AZ"   || echo "000")
           STATUS_PROD=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_PROD" || echo "000")
-
-          echo "HTTP Status AZ:   $STATUS_AZ"
-          echo "HTTP Status PROD: $STATUS_PROD"
-
+          echo "AZ   v${NEXT}: HTTP $STATUS_AZ"
+          echo "PROD v${NEXT}: HTTP $STATUS_PROD"
           echo "next_version=$NEXT" >> $GITHUB_OUTPUT
 
           if [ "$STATUS_AZ" = "200" ]; then
             echo "found=true"       >> $GITHUB_OUTPUT
             echo "pdf_url=$URL_AZ" >> $GITHUB_OUTPUT
             echo "variant=AZ"      >> $GITHUB_OUTPUT
-            echo "Neue Version gefunden: AZ v${NEXT}"
           elif [ "$STATUS_PROD" = "200" ]; then
             echo "found=true"        >> $GITHUB_OUTPUT
             echo "pdf_url=$URL_PROD" >> $GITHUB_OUTPUT
             echo "variant=PROD"      >> $GITHUB_OUTPUT
-            echo "Neue Version gefunden: PROD v${NEXT}"
           else
             echo "found=false" >> $GITHUB_OUTPUT
-            echo "Keine neue Version gefunden. Naechste Pruefung: naechsten Montag."
+            echo "Keine neue Version. Naechste Pruefung: naechsten Montag."
           fi
 
-      # 5. PDF herunterladen (mit Browser-Headers und Cookie-Session)
-      - name: Download new PDF
+      # 5. PDF mit echtem Chromium-Browser herunterladen
+      #    (umgeht den JavaScript-Bot-Schutz des Ministeriums)
+      - name: Download PDF via Playwright
         if: steps.check.outputs.found == 'true'
         run: |
-          set -e
-          URL="${{ steps.check.outputs.pdf_url }}"
-          REFERER="https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/"
-          COOKIES="/tmp/salute_cookies.txt"
+          python3 << 'PYEOF'
+          import asyncio, sys, os
+          from playwright.async_api import async_playwright
 
-          echo "Hole Session-Cookies vom Ministeriums-Portal..."
-          curl -s -c "$COOKIES" -o /dev/null \
-            --max-time 30 \
-            -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
-            "$REFERER" || true
+          PDF_URL  = os.environ.get("PDF_URL")
+          PORTAL   = "https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/"
+          OUT_PATH = "/tmp/integratori_new.pdf"
 
-          echo "Lade PDF herunter: $URL"
-          curl -L \
-            --max-time 300 \
-            --retry 3 \
-            --retry-delay 10 \
-            --fail \
-            --show-error \
-            -b "$COOKIES" \
-            -c "$COOKIES" \
-            -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
-            -H "Referer: $REFERER" \
-            -H "Accept: application/pdf,*/*;q=0.9" \
-            "$URL" -o /tmp/integratori_new.pdf
+          async def download():
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch(headless=True)
+                  context = await browser.new_context(
+                      accept_downloads=True,
+                      user_agent=(
+                          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/124.0.0.0 Safari/537.36"
+                      )
+                  )
+                  page = await context.new_page()
 
-          SIZE=$(du -sh /tmp/integratori_new.pdf | cut -f1)
-          BYTES=$(stat -c%s /tmp/integratori_new.pdf)
-          echo "Download: $SIZE ($BYTES Bytes)"
+                  # Schritt 1: Portal-Seite aufrufen → Bot-Check bestehen
+                  print(f"Oeffne Portal: {PORTAL}")
+                  await page.goto(PORTAL, wait_until="domcontentloaded", timeout=30000)
+                  await page.wait_for_timeout(3000)
+                  print("Portal geladen. Bot-Check bestanden.")
 
-          # Pruefen ob echtes PDF (Magic Bytes %PDF am Anfang)
-          MAGIC=$(head -c 4 /tmp/integratori_new.pdf | cat -v)
-          echo "Magic Bytes: $MAGIC"
-          if ! head -c 4 /tmp/integratori_new.pdf | grep -q "%PDF"; then
-            echo "FEHLER: Heruntergeladene Datei ist kein gueltiges PDF."
-            echo "Erste 500 Zeichen der Antwort:"
-            head -c 500 /tmp/integratori_new.pdf
-            exit 1
-          fi
+                  # Schritt 2: PDF herunterladen
+                  print(f"Starte PDF-Download: {PDF_URL}")
+                  async with page.expect_download(timeout=300000) as dl_info:
+                      await page.goto(PDF_URL, timeout=60000)
+                  dl = await dl_info.value
+                  await dl.save_as(OUT_PATH)
+                  print(f"PDF gespeichert: {OUT_PATH}")
 
-          echo "PDF validiert. Groesse: $SIZE"
+                  await browser.close()
+
+              # Validierung
+              size = os.path.getsize(OUT_PATH)
+              print(f"Dateigroesse: {size:,} Bytes")
+              with open(OUT_PATH, "rb") as f:
+                  magic = f.read(4)
+              if magic != b"%PDF":
+                  print(f"FEHLER: Kein gueltiges PDF (Magic Bytes: {magic})")
+                  sys.exit(1)
+              print("PDF validiert.")
+
+          asyncio.run(download())
+          PYEOF
+        env:
+          PDF_URL: ${{ steps.check.outputs.pdf_url }}
 
       # 6. PDF → JSON konvertieren
       - name: Convert PDF to JSON
         if: steps.check.outputs.found == 'true'
         run: |
           set -e
-          echo "Starte Konvertierung..."
           python3 .github/scripts/pdf_to_json.py \
             /tmp/integratori_new.pdf \
             data/integratori.json
-          echo "Konvertierung abgeschlossen."
           echo "JSON-Groesse: $(du -sh data/integratori.json | cut -f1)"
 
-      # 7. Committen und pushen
+      # 7. Committen und pushen → GitHub Pages deployt automatisch
       - name: Commit and push
         if: steps.check.outputs.found == 'true'
         run: |
           set -e
           NEXT="${{ steps.check.outputs.next_version }}"
           echo "$NEXT" > .github/integratori-version.txt
-
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git status
           git add data/integratori.json .github/integratori-version.txt
-          git diff --cached --stat
           git commit -m "data: Integratori-Datenbank automatisch aktualisiert auf Version ${NEXT}"
           git push origin HEAD
           echo "Push abgeschlossen. GitHub Pages deployt automatisch."
 
-      # 8. Erfolgs-Issue
+      # 8. Erfolgs-Issue → GitHub schickt E-Mail
       - name: Create success issue
         if: steps.check.outputs.found == 'true' && success()
         uses: actions/github-script@v7
@@ -206,7 +206,7 @@ jobs:
               body: [
                 `## Aggiornamento automatico fallito`,
                 ``,
-                `Vedi il log completo: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+                `**Log:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
                 ``,
                 `**PDF:** [${url}](${url})`,
                 ``,
