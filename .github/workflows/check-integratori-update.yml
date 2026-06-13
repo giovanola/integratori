@@ -2,8 +2,12 @@ name: Monitor and Update Integratori Database
 
 on:
   schedule:
-    - cron: '0 7 * * 1'    # Jeden Montag um 07:00 UTC
-  workflow_dispatch:         # Manuell auslösbar über GitHub UI → Actions → Run workflow
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+# Node.js 24 erzwingen (behebt Deprecation-Warnung)
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: write
@@ -15,9 +19,14 @@ jobs:
 
     steps:
 
+      # 1. Checkout mit explizitem Token fuer Push-Berechtigung
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
+      # 2. Python + pdfplumber
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -26,68 +35,110 @@ jobs:
       - name: Install pdfplumber
         run: pip install pdfplumber --quiet
 
+      # 3. Aktuelle Version lesen (Leerzeichen/Newlines entfernen)
       - name: Read current known version
         id: current
         run: |
-          VERSION=$(cat .github/integratori-version.txt 2>/dev/null || echo "11")
+          if [ -f .github/integratori-version.txt ]; then
+            VERSION=$(cat .github/integratori-version.txt | tr -d '[:space:]')
+          else
+            VERSION="11"
+          fi
+          # Sicherstellen dass es eine Zahl ist
+          if ! [[ "$VERSION" =~ ^[0-9]+$ ]]; then
+            echo "WARNUNG: Ungueltige Version '$VERSION', setze auf 11"
+            VERSION="11"
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Bekannte Version: $VERSION"
+          echo "Aktuelle bekannte Version: $VERSION"
 
+      # 4. Neue Version pruefen
       - name: Check for new PDF version
         id: check
         run: |
-          CURRENT=${{ steps.current.outputs.version }}
-          NEXT=$((CURRENT + 1))
+          set -e
+          CURRENT="${{ steps.current.outputs.version }}"
+          NEXT=$(( CURRENT + 1 ))
           BASE="https://www.salute.gov.it/new/sites/default/files"
           URL_AZ="${BASE}/INTEGRATORI_NOTIFICATI_ORD_AZ_${NEXT}.pdf"
           URL_PROD="${BASE}/INTEGRATORI_NOTIFICATI_ORD_PROD_${NEXT}.pdf"
 
-          STATUS_AZ=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_AZ")
-          STATUS_PROD=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_PROD")
-          echo "AZ   v${NEXT}: HTTP $STATUS_AZ"
-          echo "PROD v${NEXT}: HTTP $STATUS_PROD"
+          echo "Pruefe AZ   v${NEXT}: $URL_AZ"
+          STATUS_AZ=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_AZ" || echo "000")
+
+          echo "Pruefe PROD v${NEXT}: $URL_PROD"
+          STATUS_PROD=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_PROD" || echo "000")
+
+          echo "HTTP Status AZ:   $STATUS_AZ"
+          echo "HTTP Status PROD: $STATUS_PROD"
+
+          echo "next_version=$NEXT" >> $GITHUB_OUTPUT
 
           if [ "$STATUS_AZ" = "200" ]; then
             echo "found=true"       >> $GITHUB_OUTPUT
             echo "pdf_url=$URL_AZ" >> $GITHUB_OUTPUT
             echo "variant=AZ"      >> $GITHUB_OUTPUT
+            echo "Neue Version gefunden: AZ v${NEXT}"
           elif [ "$STATUS_PROD" = "200" ]; then
             echo "found=true"        >> $GITHUB_OUTPUT
             echo "pdf_url=$URL_PROD" >> $GITHUB_OUTPUT
             echo "variant=PROD"      >> $GITHUB_OUTPUT
+            echo "Neue Version gefunden: PROD v${NEXT}"
           else
             echo "found=false" >> $GITHUB_OUTPUT
-            echo "Keine neue Version. Naechste Pruefung naechsten Montag."
+            echo "Keine neue Version gefunden. Naechste Pruefung: naechsten Montag."
           fi
-          echo "next_version=$NEXT" >> $GITHUB_OUTPUT
 
+      # 5. PDF herunterladen
       - name: Download new PDF
         if: steps.check.outputs.found == 'true'
         run: |
-          curl -L --max-time 180 --retry 3 --retry-delay 5 \
-            "${{ steps.check.outputs.pdf_url }}" -o /tmp/integratori_new.pdf
-          echo "Download: $(du -sh /tmp/integratori_new.pdf)"
+          set -e
+          URL="${{ steps.check.outputs.pdf_url }}"
+          echo "Lade herunter: $URL"
+          curl -L --max-time 180 --retry 3 --retry-delay 10 \
+            --fail --show-error \
+            "$URL" -o /tmp/integratori_new.pdf
+          SIZE=$(du -sh /tmp/integratori_new.pdf | cut -f1)
+          echo "Download abgeschlossen: $SIZE"
+          # Minimale Groesse pruefen (PDF sollte > 1 MB sein)
+          BYTES=$(stat -c%s /tmp/integratori_new.pdf)
+          if [ "$BYTES" -lt 1000000 ]; then
+            echo "FEHLER: Heruntergeladene Datei zu klein ($BYTES Bytes) - kein gueltiges PDF"
+            exit 1
+          fi
 
+      # 6. PDF → JSON konvertieren
       - name: Convert PDF to JSON
         if: steps.check.outputs.found == 'true'
         run: |
+          set -e
+          echo "Starte Konvertierung..."
           python3 .github/scripts/pdf_to_json.py \
             /tmp/integratori_new.pdf \
             data/integratori.json
+          echo "Konvertierung abgeschlossen."
+          echo "JSON-Groesse: $(du -sh data/integratori.json | cut -f1)"
 
-      - name: Commit and push updated database
+      # 7. Committen und pushen
+      - name: Commit and push
         if: steps.check.outputs.found == 'true'
         run: |
-          NEXT=${{ steps.check.outputs.next_version }}
+          set -e
+          NEXT="${{ steps.check.outputs.next_version }}"
           echo "$NEXT" > .github/integratori-version.txt
+
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git status
           git add data/integratori.json .github/integratori-version.txt
+          git diff --cached --stat
           git commit -m "data: Integratori-Datenbank automatisch aktualisiert auf Version ${NEXT}"
-          git push
-          echo "Push abgeschlossen — GitHub Pages deployt automatisch."
+          git push origin HEAD
+          echo "Push abgeschlossen. GitHub Pages deployt automatisch."
 
-      - name: Create success notification issue
+      # 8. Erfolgs-Issue
+      - name: Create success issue
         if: steps.check.outputs.found == 'true' && success()
         uses: actions/github-script@v7
         with:
@@ -95,32 +146,27 @@ jobs:
             const next    = '${{ steps.check.outputs.next_version }}';
             const url     = '${{ steps.check.outputs.pdf_url }}';
             const variant = '${{ steps.check.outputs.variant }}';
-            const body = [
-              `## Database Integratori aggiornato automaticamente`,
-              ``,
-              `| Campo        | Valore |`,
-              `|--------------|--------|`,
-              `| Versione     | ${next} |`,
-              `| Variante PDF | ${variant === 'AZ' ? 'Ordine per Azienda' : 'Ordine per Prodotto'} |`,
-              `| PDF sorgente | [Scarica](${url}) |`,
-              `| File         | \`data/integratori.json\` aggiornato |`,
-              `| Sito live    | https://giovanola.github.io/integratori/ |`,
-              ``,
-              `---`,
-              `**Unica azione manuale richiesta:**`,
-              `Aggiornare in \`index.html\`:`,
-              `- \`APP_VERSION\` (es. v5.7)`,
-              `- \`APP_RELEASE\` (data odierna, formato YYYY-MM-DD)`,
-            ].join('\n');
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo:  context.repo.repo,
               title: `Database aggiornato automaticamente — versione ${next}`,
-              body,
+              body: [
+                `## Database Integratori aggiornato`,
+                ``,
+                `| Campo        | Valore |`,
+                `|--------------|--------|`,
+                `| Versione     | ${next} |`,
+                `| Variante PDF | ${variant === 'AZ' ? 'Ordine per Azienda' : 'Ordine per Prodotto'} |`,
+                `| PDF sorgente | [Scarica](${url}) |`,
+                `| Sito live    | https://giovanola.github.io/integratori/ |`,
+                ``,
+                `**Unica azione manuale:** aggiornare \`APP_VERSION\` e \`APP_RELEASE\` in \`index.html\`.`,
+              ].join('\n'),
               labels: ['data-update'],
             });
 
-      - name: Create error notification issue
+      # 9. Fehler-Issue
+      - name: Create error issue
         if: steps.check.outputs.found == 'true' && failure()
         uses: actions/github-script@v7
         with:
@@ -134,7 +180,7 @@ jobs:
               body: [
                 `## Aggiornamento automatico fallito`,
                 ``,
-                `Nuovo PDF rilevato ma la conversione ha fallito (struttura PDF cambiata?).`,
+                `Vedi il log completo: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
                 ``,
                 `**PDF:** [${url}](${url})`,
                 ``,
@@ -142,4 +188,3 @@ jobs:
               ].join('\n'),
               labels: ['data-update', 'bug'],
             });
-
