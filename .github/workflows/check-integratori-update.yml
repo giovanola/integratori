@@ -52,54 +52,35 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Aktuelle bekannte Version: $VERSION"
 
-      # 4. Neue Version pruefen (HEAD-Request genuegt fuer Existenzpruefung)
-      - name: Check for new PDF version
+      # 4 + 5. Neue Version pruefen UND herunterladen (kombiniert via Playwright)
+      #        Playwright nutzt echte Browser-Cookies → keine False Positives
+      - name: Check and download new PDF
         id: check
-        run: |
-          set -e
-          CURRENT="${{ steps.current.outputs.version }}"
-          NEXT=$(( CURRENT + 1 ))
-          BASE="https://www.salute.gov.it/new/sites/default/files"
-          URL_AZ="${BASE}/INTEGRATORI_NOTIFICATI_ORD_AZ_${NEXT}.pdf"
-          URL_PROD="${BASE}/INTEGRATORI_NOTIFICATI_ORD_PROD_${NEXT}.pdf"
-
-          STATUS_AZ=$(curl   -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_AZ"   || echo "000")
-          STATUS_PROD=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 20 "$URL_PROD" || echo "000")
-          echo "AZ   v${NEXT}: HTTP $STATUS_AZ"
-          echo "PROD v${NEXT}: HTTP $STATUS_PROD"
-          echo "next_version=$NEXT" >> $GITHUB_OUTPUT
-
-          if [ "$STATUS_AZ" = "200" ]; then
-            echo "found=true"       >> $GITHUB_OUTPUT
-            echo "pdf_url=$URL_AZ" >> $GITHUB_OUTPUT
-            echo "variant=AZ"      >> $GITHUB_OUTPUT
-          elif [ "$STATUS_PROD" = "200" ]; then
-            echo "found=true"        >> $GITHUB_OUTPUT
-            echo "pdf_url=$URL_PROD" >> $GITHUB_OUTPUT
-            echo "variant=PROD"      >> $GITHUB_OUTPUT
-          else
-            echo "found=false" >> $GITHUB_OUTPUT
-            echo "Keine neue Version. Naechste Pruefung: naechsten Montag."
-          fi
-
-      # 5. PDF mit echtem Chromium-Browser herunterladen
-      #    (umgeht den JavaScript-Bot-Schutz des Ministeriums)
-      - name: Download PDF via Playwright
-        if: steps.check.outputs.found == 'true'
         run: |
           python3 << 'PYEOF'
           import asyncio, sys, os
           from playwright.async_api import async_playwright
 
-          PDF_URL  = os.environ.get("PDF_URL")
-          PORTAL   = "https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/"
-          OUT_PATH = "/tmp/integratori_new.pdf"
+          CURRENT     = int(os.environ.get("CURRENT_VERSION", "11"))
+          NEXT        = CURRENT + 1
+          BASE        = "https://www.salute.gov.it/new/sites/default/files"
+          PORTAL      = "https://www.salute.gov.it/new/it/tema/alimenti-fini-medici-speciali-ed-integratori/registro-degli-integratori-alimentari/"
+          OUT_PATH    = "/tmp/integratori_new.pdf"
+          ENV_FILE    = os.environ.get("GITHUB_OUTPUT", "/dev/null")
 
-          async def download():
+          CANDIDATES = [
+              (f"{BASE}/INTEGRATORI_NOTIFICATI_ORD_AZ_{NEXT}.pdf",   "AZ"),
+              (f"{BASE}/INTEGRATORI_NOTIFICATI_ORD_PROD_{NEXT}.pdf", "PROD"),
+          ]
+
+          def write_output(key, value):
+              with open(ENV_FILE, "a") as f:
+                  f.write(f"{key}={value}\n")
+
+          async def run():
               async with async_playwright() as p:
                   browser = await p.chromium.launch(headless=True)
                   context = await browser.new_context(
-                      accept_downloads=True,
                       user_agent=(
                           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                           "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -108,49 +89,58 @@ jobs:
                   )
                   page = await context.new_page()
 
-                  # Schritt 1: Portal-Seite aufrufen → Bot-Check bestehen
-                  print(f"Oeffne Portal: {PORTAL}")
+                  # Portal besuchen → Bot-Check bestehen + Cookies holen
+                  print(f"Oeffne Portal fuer Session-Cookies...")
                   await page.goto(PORTAL, wait_until="domcontentloaded", timeout=30000)
                   await page.wait_for_timeout(3000)
-                  print("Portal geladen. Bot-Check bestanden.")
+                  print("Portal geladen.")
 
-                  # Schritt 2: PDF via Browser-Kontext laden
-                  # context.request teilt die Cookies der Portal-Sitzung
-                  # und umgeht so den Bot-Check ohne Download-Event zu brauchen
-                  print(f"Lade PDF via Browser-Kontext: {PDF_URL}")
-                  response = await context.request.get(
-                      PDF_URL,
-                      headers={
-                          "Referer":  PORTAL,
-                          "Accept":   "application/pdf,*/*;q=0.9",
-                      },
-                      timeout=300000,
-                  )
-                  if not response.ok:
-                      print(f"FEHLER: HTTP {response.status} {response.status_text}")
-                      sys.exit(1)
+                  # Jede Kandidaten-URL pruefen
+                  for url, variant in CANDIDATES:
+                      print(f"Pruefe v{NEXT} ({variant}): {url}")
+                      resp = await context.request.get(
+                          url,
+                          headers={"Referer": PORTAL, "Accept": "application/pdf,*/*"},
+                          timeout=60000,
+                      )
+                      print(f"  HTTP {resp.status}")
 
-                  body = await response.body()
-                  with open(OUT_PATH, "wb") as f:
-                      f.write(body)
-                  print(f"PDF gespeichert: {OUT_PATH}")
+                      if resp.status == 404:
+                          print(f"  Nicht gefunden.")
+                          continue
 
+                      if not resp.ok:
+                          print(f"  Unerwarteter Status {resp.status} — ueberspringe.")
+                          continue
+
+                      # Echtes PDF pruefen (Magic Bytes)
+                      body = await resp.body()
+                      if not body[:4] == b"%PDF":
+                          print(f"  Antwort ist kein PDF ({body[:20]}) — ueberspringe.")
+                          continue
+
+                      # Gefunden: speichern
+                      with open(OUT_PATH, "wb") as f:
+                          f.write(body)
+                      size_kb = len(body) // 1024
+                      print(f"  PDF gespeichert: {size_kb} KB")
+
+                      write_output("found",        "true")
+                      write_output("pdf_url",       url)
+                      write_output("variant",       variant)
+                      write_output("next_version",  str(NEXT))
+                      await browser.close()
+                      sys.exit(0)
+
+                  # Nichts gefunden
+                  print(f"Keine neue Version (v{NEXT}) verfuegbar. Naechste Pruefung: naechsten Montag.")
+                  write_output("found", "false")
                   await browser.close()
 
-              # Validierung
-              size = os.path.getsize(OUT_PATH)
-              print(f"Dateigroesse: {size:,} Bytes")
-              with open(OUT_PATH, "rb") as f:
-                  magic = f.read(4)
-              if magic != b"%PDF":
-                  print(f"FEHLER: Kein gueltiges PDF (Magic Bytes: {magic})")
-                  sys.exit(1)
-              print("PDF validiert.")
-
-          asyncio.run(download())
+          asyncio.run(run())
           PYEOF
         env:
-          PDF_URL: ${{ steps.check.outputs.pdf_url }}
+          CURRENT_VERSION: ${{ steps.current.outputs.version }}
 
       # 6. PDF → JSON konvertieren
       - name: Convert PDF to JSON
